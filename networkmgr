@@ -3,9 +3,9 @@
 from sys import path
 import signal
 path.append("/usr/local/share/networkmgr")
-from trayicon import trayIcon
+from src.trayicon import TrayIcon
 
 signal.signal(signal.SIGINT, signal.SIG_DFL)
 
-i = trayIcon()
+i = TrayIcon()
 i.tray()

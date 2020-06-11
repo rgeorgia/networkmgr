@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 
 import gi
-gi.require_version('Gtk', '3.0')
-from gi.repository import Gtk
-from net_api import scanWifiBssid, connectToSsid
 
+from gi.repository import Gtk
+from .net_api import scan_wifi_bssid, connect_to_ssid
+
+gi.require_version('Gtk', '3.0')
 wpa_supplican = "/etc/wpa_supplicant.conf"
 
 
-class Authentication():
+class Authentication:
     def button(self):
         cancel = Gtk.Button(stock=Gtk.STOCK_CANCEL)
         cancel.connect("clicked", self.close)
@@ -20,12 +21,12 @@ class Authentication():
         table.attach(cancel, 3, 4, 0, 1)
         return table
 
-    def close(self, widget):
+    def close(self):
         self.window.hide()
 
-    def add_to_wpa_supplicant(self, widget):
+    def add_to_wpa_supplicant(self):
         pwd = self.password.get_text()
-        Lock_Wpa_Supplicant(self.ssid, self.bssid, pwd, self.wificard)
+        LockWpaSupplicant(self.ssid, self.bssid, pwd, self.wificard)
         self.window.hide()
 
     def on_check(self, widget):
@@ -75,7 +76,7 @@ class Authentication():
         self.window.show_all()
 
 
-class Open_Wpa_Supplicant():
+class OpenWpaSupplicant:
     def __init__(self, ssid, bssid, wificard):
         ws = '\nnetwork={'
         ws += '\n ssid="%s"' % ssid
@@ -84,12 +85,12 @@ class Open_Wpa_Supplicant():
         wsf = open(wpa_supplican, 'a')
         wsf.writelines(ws)
         wsf.close()
-        connectToSsid(ssid, wificard)
+        connect_to_ssid(ssid, wificard)
 
 
-class Lock_Wpa_Supplicant():
+class LockWpaSupplicant:
     def __init__(self, ssid, bssid, pwd, wificard):
-        if 'RSN' in scanWifiBssid(bssid, wificard):
+        if 'RSN' in scan_wifi_bssid(bssid, wificard):
             # /etc/wpa_supplicant.conf written by networkmgr
             ws = '\nnetwork={'
             ws += '\n ssid="%s"' % ssid
@@ -97,7 +98,7 @@ class Lock_Wpa_Supplicant():
             ws += '\n key_mgmt=WPA-PSK'
             ws += '\n proto=RSN'
             ws += '\n psk="%s"\n}' % pwd
-        elif 'WPA' in scanWifiBssid(bssid, wificard):
+        elif 'WPA' in scan_wifi_bssid(bssid, wificard):
             ws = '\nnetwork={'
             ws += '\n ssid="%s"' % ssid
             ws += '\n bssid=%s' % bssid
@@ -114,4 +115,4 @@ class Lock_Wpa_Supplicant():
         wsf = open(wpa_supplican, 'a')
         wsf.writelines(ws)
         wsf.close()
-        connectToSsid(ssid, wificard)
+        connect_to_ssid(ssid, wificard)

@@ -31,7 +31,8 @@ def datafilelist(installbase, sourcebase):
         datafileList.append((root.replace(sourcebase, installbase), fileList))
     return datafileList
 
-prefix=sys.prefix
+
+prefix = sys.prefix
 
 # '{prefix}/share/man/man1', glob('data/*.1')),
 

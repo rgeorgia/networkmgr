@@ -54,8 +54,8 @@ notnics = [
     "wg"
 ]
 
-cmd = "kenv | grep rc_system"
-rc_system = Popen(cmd, shell=True, stdout=PIPE, universal_newlines=True)
+check_rc_cmd = "kenv | grep rc_system"
+rc_system = Popen(check_rc_cmd, shell=True, stdout=PIPE, universal_newlines=True)
 
 if 'openrc' in rc_system.stdout.read():
     openrc = True
@@ -67,10 +67,9 @@ else:
     network = 'netif'
 
 
-def scanWifiBssid(bssid, wificard):
-    grepListScanv = "ifconfig -v %s list scan | grep -a %s" % (wificard, bssid)
-    wifi = Popen(grepListScanv, shell=True, stdout=PIPE,
-                 universal_newlines=True)
+def scan_wifi_bssid(bssid, wificard):
+    grep_list_scanv = "ifconfig -v %s list scan | grep -a %s" % (wificard, bssid)
+    wifi = Popen(grep_list_scanv, shell=True, stdout=PIPE, universal_newlines=True)
     info = wifi.stdout.readlines()[0].rstrip()
     return info
 
@@ -140,7 +139,7 @@ def defaultcard():
         return list(filter(None, device[0].rstrip().split()))[3]
 
 
-def ifWlanDisable(wificard):
+def if_wlan_disable(wificard):
     cmd = "ifconfig %s list scan" % wificard
     nics = Popen(cmd, shell=True, stdout=PIPE, universal_newlines=True)
     if "" == nics.stdout.read():
@@ -149,7 +148,7 @@ def ifWlanDisable(wificard):
         return False
 
 
-def ifStatue(wificard):
+def if_statue(wificard):
     cmd = "ifconfig %s" % wificard
     wl = Popen(cmd, shell=True, stdout=PIPE, universal_newlines=True)
     wlout = wl.stdout.read()
@@ -248,13 +247,13 @@ def networkdictionary():
                 info[3] = barpercent(sn)
                 info.insert(0, ssid)
                 connectioninfo[bssid] = info
-            if ifWlanDisable(card) is True:
+            if if_wlan_disable(card) is True:
                 connectionstat = {
                     "connection": "Disabled",
                     "ssid": None,
                     "bssid": None
                 }
-            elif ifStatue(card) is False:
+            elif if_statue(card) is False:
                 connectionstat = {
                     "connection": "Disconnected",
                     "ssid": None, "bssid": None
@@ -284,11 +283,11 @@ def networkdictionary():
     return maindictionary
 
 
-def connectionStatus(card):
+def connection_status(card):
     if card is None:
         netstate = "No network card enable"
     elif 'wlan' in card:
-        if ifWlanDisable(card) is False and ifStatue(card) is True:
+        if if_wlan_disable(card) is False and if_statue(card) is True:
             cmd1 = "ifconfig %s | grep ssid" % card
             cmd2 = "ifconfig %s | grep 'inet '" % card
             out1 = Popen(cmd1, shell=True, stdout=PIPE,
@@ -297,7 +296,7 @@ def connectionStatus(card):
                          universal_newlines=True)
             line1 = out1.stdout.read().strip()
             line2 = out2.stdout.read().strip()
-            netstate = line1 + '\n' + subnetHexToDec(line2)
+            netstate = line1 + '\n' + subnet_hex_to_dec(line2)
         else:
             netstate = "WiFi %s not conected" % card
     else:
@@ -305,7 +304,7 @@ def connectionStatus(card):
         out = Popen(cmd, shell=True, stdout=PIPE,
                     universal_newlines=True)
         line = out.stdout.read().strip()
-        netstate = subnetHexToDec(line)
+        netstate = subnet_hex_to_dec(line)
     return netstate
 
 
@@ -329,39 +328,40 @@ def startnetworkcard(netcard):
     sleep(1)
 
 
-def wifiDisconnection(wificard):
+def wifi_disconnection(wificard):
     os.system(f'ifconfig {wificard} down')
     os.system(f"ifconfig {wificard} ssid 'none'")
     os.system(f'ifconfig {wificard} up')
     sleep(1)
 
 
-def disableWifi(wificard):
+def disable_wifi(wificard):
     os.system(f'ifconfig {wificard} down')
     sleep(1)
 
 
-def enableWifi(wificard):
+def enable_wifi(wificard):
     os.system(f'ifconfig {wificard} up')
     os.system(f'ifconfig {wificard} up scan')
     sleep(1)
 
+
 # work around of iwm on FreeBSD 12.0
 def start_wifi():
-   crd = Popen(ncard, shell=True, stdout=PIPE, universal_newlines=True)
-   for nic in crd.stdout.readlines()[0].rstrip().split():
-       print(nic)
-       if 'wlan' in nic:
-           os.system(f'wpa_supplicant -B -i {nic} -c /etc/wpa_supplicant.conf')
-           sleep(0.5)
-           os.system(f'ifconfig {nic} up')
-           sleep(0.5)
-           os.system(f'ifconfig {nic} scan')
-           sleep(2)
-           os.system(f'dhclient {nic}')
+    crd = Popen(ncard, shell=True, stdout=PIPE, universal_newlines=True)
+    for nic in crd.stdout.readlines()[0].rstrip().split():
+        print(nic)
+        if 'wlan' in nic:
+            os.system(f'wpa_supplicant -B -i {nic} -c /etc/wpa_supplicant.conf')
+            sleep(0.5)
+            os.system(f'ifconfig {nic} up')
+            sleep(0.5)
+            os.system(f'ifconfig {nic} scan')
+            sleep(2)
+            os.system(f'dhclient {nic}')
 
 
-def connectToSsid(name, wificard):
+def connect_to_ssid(name, wificard):
     os.system(f'killall wpa_supplicant')
     sleep(0.5)
     os.system(f"ifconfig {wificard} ssid '{name}'")
@@ -376,10 +376,11 @@ def connectToSsid(name, wificard):
         os.system(f'dhclient {wificard}')
     sleep(0.5)
 
-def subnetHexToDec( ifconfigstring ):
+
+def subnet_hex_to_dec(ifconfigstring):
     snethex = re.search('0x.{8}', ifconfigstring).group(0)[2:]
     snethexlist = re.findall('..', snethex)
     snetdeclist = [int(li, 16) for li in snethexlist]
     snetdec = ".".join(str(li) for li in snetdeclist)
-    outputline = ifconfigstring.replace(re.search('0x.{8}',ifconfigstring).group(0),snetdec)
+    outputline = ifconfigstring.replace(re.search('0x.{8}', ifconfigstring).group(0), snetdec)
     return outputline
