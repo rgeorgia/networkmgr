@@ -37,6 +37,12 @@ nosetests.xml
 .idea/
 .vscode
 
+<<<<<<< HEAD
 # Pipenv
 Pipfile
 Pipfile.lock
+=======
+# virtual venv
+venv/*
+*venv/*
+>>>>>>> 8844e9b597fc978ed439225a543a236fbff68bbd
