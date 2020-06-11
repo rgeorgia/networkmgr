@@ -36,3 +36,7 @@ nosetests.xml
 .pydevproject
 .idea/
 .vscode
+
+# Pipenv
+Pipfile
+Pipfile.lock
