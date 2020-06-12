@@ -21,10 +21,7 @@ config_card:
 
 
 def i_am_root() -> bool:
-    if os.geteuid() != 0:
-        return False
-    else:
-        return True
+    return os.geteuid() == 0
 
 
 class AutoConfigure:
