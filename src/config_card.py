@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import os
 import socket
 import platform
@@ -16,8 +17,25 @@ config_card:
        NOTE: FreeBSD is ifconfig_nic_enable
        NetBSD uses /etc/ifconfig.netif and dhcpcd_flags="-qM nic0 nic1"
     
-    
 """
+
+not_valid_if = [
+    "lo",
+    "fwe",
+    "fwip",
+    "tap",
+    "plip",
+    "pfsync",
+    "pflog",
+    "tun",
+    "sl",
+    "faith",
+    "ppp",
+    "brige",
+    "ixautomation",
+    "vm-ixautomation",
+    "wg"
+]
 
 
 def i_am_root() -> bool:
@@ -31,6 +49,12 @@ class AutoConfigure:
     @property
     def nic_cards(self):
         return [item[1] for item in socket.if_nameindex() if 'lo' not in item[1]]
+
+    @staticmethod
+    def read_rc_conf(self):
+        rc_conf_file = '/etc/rc.conf'
+        with open(rc_conf_file, 'r') as rcf:
+            rc_data = rcf.readlines()
 
 
 if i_am_root():
