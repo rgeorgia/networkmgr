@@ -19,44 +19,87 @@ config_card:
     
 """
 
-not_valid_if = [
-    "lo",
-    "fwe",
-    "fwip",
-    "tap",
-    "plip",
-    "pfsync",
-    "pflog",
-    "tun",
-    "sl",
-    "faith",
-    "ppp",
-    "brige",
-    "ixautomation",
-    "vm-ixautomation",
-    "wg"
-]
+not_valid_if = {
+    'lo': 'loopback',
+    'fwe': 'firewire',
+    'fwip': 'IP over FireWire',
+    'tap': 'tuntap tunnel',
+    'plip': 'printer port Internet Protocol driver',
+    'pfsync': 'packet filter state table sychronisation interface',
+    'pflog': 'packet filter logging interface',
+    'tun': 'tunnel software network interface',
+    'sl': '',
+    'faith': 'IPv6-to-IPv4 TCP relay capturing interface',
+    'ppp': 'Point to Point Protocol',
+    'bridge': 'if_bridge – network bridge device',
+    'ixautomation': 'testing framework for iX projects',
+    'vm-ixautomation': 'testing framework for iX projects',
+    'wg': 'Wire Guard',
+}
 
 
 def i_am_root() -> bool:
     return os.geteuid() == 0
 
 
+class ConfigCardException(Exception):
+    pass
+
+
+class RcConfig:
+    def __init__(self):
+        self._flags_types = None
+        self.rc_conf_file = '/etc/rc.conf'
+
+    @property
+    def enabling_value(self):
+        return ["YES", "TRUE", "ON", "1", "NO", "FALSE", "OFF", "0"]
+
+    def read_rc_conf(self):
+        try:
+            with open(self.rc_conf_file) as f_name:
+                data = f_name.readlines()
+        except FileNotFoundError as e:
+            raise ConfigCardException(f"{self.__class__.__name__} : {e}")
+        return data
+
+    def replace_line(self, to_replace: str, replacement: str):
+        with fileinput.input(files=self.rc_conf_file, inplace=True, backup=".bak") as f:
+            for line in f:
+                if to_replace in line:
+                    print(replacement.strip())
+                else:
+                    print(line.strip())
+
+    def add_line(self, rc_string: str):
+        with open(self.rc_conf_file, "a") as f:
+            f.write(f"{rc_string}\n")
+
+
+class FreeBSDRc(RcConfig):
+    def __init__(self):
+        super().__init__()
+
+
+class NetBSDRc(RcConfig):
+    def __init__(self):
+        super().__init__()
+
+
 class AutoConfigure:
     def __init__(self):
         self.os = platform.system()
+        if 'NetBSD' in self.os:
+            self.rc_file = NetBSDRc()
+        else:
+            self.rc_file = FreeBSDRc()
 
     @property
     def nic_cards(self):
         return [item[1] for item in socket.if_nameindex() if 'lo' not in item[1]]
 
-    @staticmethod
-    def read_rc_conf(self):
-        rc_conf_file = '/etc/rc.conf'
-        with open(rc_conf_file, 'r') as rcf:
-            rc_data = rcf.readlines()
 
-
+AutoConfigure()
 if i_am_root():
     AutoConfigure()
 else:
