@@ -21,3 +21,10 @@ pytest-xdist
 six
 wcwidth
 zipp
+colorama
+freebsd-sysctl
+pytest-bench
+sqlite3
+termcolor
+uhid-freebsd
+wheel

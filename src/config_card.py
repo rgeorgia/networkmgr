@@ -1,12 +1,14 @@
 #!/usr/bin/env python
+import fileinput
 import os
 import socket
 import platform
+from freebsd_sysctl import Sysctl
 
 """
 config_card:
     1. Check if user is root, if not alert and exit
-    1a. Check what BSD you are running on.
+    1a. Assumes GhostBSD or FreeBSD
     2. get a list of all the cards / network devices recognized by the system
     3. see if a wifi device has been recognized by the system
     4. read /etc/rc.conf file
@@ -15,8 +17,6 @@ config_card:
     7. Check if network device is already in /etc/rc.conf file. If network device is not in rc.conf
        file add it. 
        NOTE: FreeBSD is ifconfig_nic_enable
-       NetBSD uses /etc/ifconfig.netif and dhcpcd_flags="-qM nic0 nic1"
-    
 """
 
 not_valid_if = {
@@ -50,6 +50,7 @@ class RcConfig:
     def __init__(self):
         self._flags_types = None
         self.rc_conf_file = '/etc/rc.conf'
+        self.wifi_cards = Sysctl("net.wlan.devices").value
 
     @property
     def enabling_value(self):
@@ -81,18 +82,10 @@ class FreeBSDRc(RcConfig):
         super().__init__()
 
 
-class NetBSDRc(RcConfig):
-    def __init__(self):
-        super().__init__()
-
-
 class AutoConfigure:
     def __init__(self):
         self.os = platform.system()
-        if 'NetBSD' in self.os:
-            self.rc_file = NetBSDRc()
-        else:
-            self.rc_file = FreeBSDRc()
+
 
     @property
     def nic_cards(self):
