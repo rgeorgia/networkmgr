@@ -50,11 +50,15 @@ class RcConfig:
     def __init__(self):
         self._flags_types = None
         self.rc_conf_file = '/etc/rc.conf'
-        self.wifi_cards = Sysctl("net.wlan.devices").value
+        self._wifi_card = Sysctl("net.wlan.devices").value
 
     @property
     def enabling_value(self):
         return ["YES", "TRUE", "ON", "1", "NO", "FALSE", "OFF", "0"]
+
+    @property
+    def wifi_card(self):
+        return self._wifi_card
 
     def read_rc_conf(self):
         try:
