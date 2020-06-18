@@ -21,11 +21,11 @@ config_card:
 
 not_valid_if = {
     'lo': 'loopback',
-    'fwe': 'firewire',
+    'fwe': 'Ethernet emulation driver for FireWire',
     'fwip': 'IP over FireWire',
-    'tap': 'tuntap tunnel',
+    'tap': 'Ethernet tunnel software network interface (tap, vmnet)',
     'plip': 'printer port Internet Protocol driver',
-    'pfsync': 'packet filter state table sychronisation interface',
+    'pfsync': 'packet filter state table synchronization interface',
     'pflog': 'packet filter logging interface',
     'tun': 'tunnel software network interface',
     'sl': '',

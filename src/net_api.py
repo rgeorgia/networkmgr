@@ -27,32 +27,34 @@ LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
 ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 """
-
+from socket import socket
 from subprocess import Popen, PIPE
 from sys import path
 import os
 import re
 from time import sleep
 
+from freebsd_sysctl import Sysctl
+
 path.append("/usr/local/share/networkmgr")
-ncard = 'ifconfig -l'
-notnics = [
-    "lo",
-    "fwe",
-    "fwip",
-    "tap",
-    "plip",
-    "pfsync",
-    "pflog",
-    "tun",
-    "sl",
-    "faith",
-    "ppp",
-    "brige",
-    "ixautomation",
-    "vm-ixautomation",
-    "wg"
-]
+
+not_valid_if = {
+    'lo': 'loopback',
+    'fwe': 'Ethernet emulation driver for FireWire',
+    'fwip': 'IP over FireWire',
+    'tap': 'Ethernet tunnel software network interface (tap, vmnet)',
+    'plip': 'printer port Internet Protocol driver',
+    'pfsync': 'packet filter state table synchronization interface',
+    'pflog': 'packet filter logging interface',
+    'tun': 'tunnel software network interface',
+    'sl': 'Who knows what this is?',
+    'faith': 'IPv6-to-IPv4 TCP relay capturing interface',
+    'ppp': 'Point to Point Protocol',
+    'bridge': 'if_bridge – network bridge device',
+    'ixautomation': 'testing framework for iX projects',
+    'vm-ixautomation': 'testing framework for iX projects',
+    'wg': 'Wire Guard',
+}
 
 check_rc_cmd = "kenv | grep rc_system"
 rc_system = Popen(check_rc_cmd, shell=True, stdout=PIPE, universal_newlines=True)
@@ -75,30 +77,28 @@ def scan_wifi_bssid(bssid, wificard):
 
 
 def wired_list():
-    crd = Popen(ncard, shell=True, stdout=PIPE, universal_newlines=True)
-    wiredlist = []
+
+    wired_list = [item[1] for item in socket.if_nameindex() if 'lo' not in item[1]]
     for wiredcn in crd.stdout.readlines()[0].rstrip().split(' '):
         wnc = wiredcn
         wcardn = re.sub(r'\d+', '', wiredcn)
         if wcardn not in notnics:
-            wiredlist.append(wnc)
-    return wiredlist
+            wired_list.append(wnc)
+    return wired_list
 
 
-def ifwificardadded():
-    wifis = 'sysctl -in net.wlan.devices'
-    wifinics = Popen(wifis, shell=True, stdout=PIPE, universal_newlines=True)
-    wifiscards = wifinics.stdout.readlines()
-    answer = False
-    if len(wifiscards) != 0:
-        ifwifi = wifiscards[0].rstrip()
-        rc_conf = open('/etc/rc.conf', 'r').read()
-        wificardlist = ifwifi.split()
-        for wfcard in wificardlist:
-            if 'wlans_%s=' % wfcard not in rc_conf:
-                answer = True
-                break
-    return answer
+def is_wifi_card_added() -> bool:
+    """is_wifi_card_added
+    Checks to see if the the wifi card is in the rc.conf file
+    :return: bool
+    """
+    wifi_cards = Sysctl("net.wlan.devices").value
+
+    with open('/etc/rc.conf', 'r') as rc_conf:
+        if f"wlans_{wifi_cards}" in rc_conf.read():
+            return True
+        else:
+            return False
 
 
 def ifwiredcardadded():
@@ -114,7 +114,7 @@ def ifwiredcardadded():
 
 
 def isanewnetworkcardinstall():
-    if ifwificardadded() is True or ifwiredcardadded() is True:
+    if is_wifi_card_added() is True or ifwiredcardadded() is True:
         return True
     else:
         return False
