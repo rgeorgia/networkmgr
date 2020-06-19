@@ -27,13 +27,13 @@ LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
 ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 """
-from socket import socket
+import socket
+from dataclasses import dataclass
 from subprocess import Popen, PIPE
 from sys import path
 import os
 import re
 from time import sleep
-
 from freebsd_sysctl import Sysctl
 
 path.append("/usr/local/share/networkmgr")
@@ -56,17 +56,48 @@ not_valid_if = {
     'wg': 'Wire Guard',
 }
 
-check_rc_cmd = "kenv | grep rc_system"
-rc_system = Popen(check_rc_cmd, shell=True, stdout=PIPE, universal_newlines=True)
 
-if 'openrc' in rc_system.stdout.read():
-    openrc = True
-    rc = 'rc-'
-    network = 'network'
-else:
-    openrc = False
-    rc = ''
-    network = 'netif'
+class RcType:
+    def __init__(self):
+        self.rc = ''
+        self.chk_rc_cmd = "kenv | grep rc_system"
+        self._rc_system, _ = Popen(self.chk_rc_cmd, shell=True, stdout=PIPE, universal_newlines=True).communicate()
+
+    @property
+    def rc_system(self):
+        return self._rc_system
+
+    @property
+    def is_openrc(self):
+        if 'rc' in self.rc_system:
+            return True
+        else:
+            return False
+
+    def rc(self):
+        if 'rc' in self.rc_system:
+            return 'rc-'
+        else:
+            return ''
+
+    def network_service(self) -> str:
+        if 'rc' in self.rc_system:
+            return 'network'
+        else:
+            return 'netif'
+
+
+rc_type = RcType()
+
+
+def is_openrc() -> bool:
+    """is_openrc
+    Returns True if this system uses openrc and False is rc.d.
+    NOTE: this will work only for BSD systems. This assumes GhostBSD
+    :return: bool
+    """
+
+    return rc_type.is_openrc
 
 
 def scan_wifi_bssid(bssid, wificard):
@@ -76,15 +107,9 @@ def scan_wifi_bssid(bssid, wificard):
     return info
 
 
-def wired_list():
-
-    wired_list = [item[1] for item in socket.if_nameindex() if 'lo' not in item[1]]
-    for wiredcn in crd.stdout.readlines()[0].rstrip().split(' '):
-        wnc = wiredcn
-        wcardn = re.sub(r'\d+', '', wiredcn)
-        if wcardn not in notnics:
-            wired_list.append(wnc)
-    return wired_list
+def network_device_list():
+    """ return a list of all the discovered network interfaces, like em0, wlan0"""
+    return [item[1] for item in socket.if_nameindex() if 'lo' not in item[1]]
 
 
 def is_wifi_card_added() -> bool:
@@ -102,7 +127,7 @@ def is_wifi_card_added() -> bool:
 
 
 def ifwiredcardadded():
-    cardlist = wired_list()
+    cardlist = network_device_list()
     answer = False
     if len(cardlist) != 0:
         rc_conf = open('/etc/rc.conf', 'r').read()
@@ -178,17 +203,6 @@ def get_bssid(wificard):
     return wlan.stdout.readlines()[0].rstrip().split()[-1]
 
 
-def networklist():
-    crd = Popen(ncard, shell=True, stdout=PIPE, universal_newlines=True)
-    devicelist = []
-    for deviced in crd.stdout.readlines()[0].rstrip().split(' '):
-        ndev = deviced
-        card = re.sub(r'\d+', '', deviced)
-        if card not in notnics:
-            devicelist.append(ndev)
-    return devicelist
-
-
 def ifcardconnected(netcard):
     wifi = Popen('ifconfig ' + netcard, shell=True, stdout=PIPE,
                  universal_newlines=True)
@@ -205,9 +219,9 @@ def barpercent(sn):
 
 
 def network_service_state():
-    if openrc is True:
+    if is_openrc() is True:
         status = Popen(
-            f'{rc}service {network} status',
+            f'{RcType.rc}service {RcType.network_service} status',
             shell=True,
             stdout=PIPE,
             universal_newlines=True
@@ -221,7 +235,7 @@ def network_service_state():
 
 
 def networkdictionary():
-    nlist = networklist()
+    nlist = network_device_list()
     maindictionary = {
         'service': network_service_state(),
         'default': defaultcard()
@@ -309,12 +323,12 @@ def connection_status(card):
 
 
 def stopallnetwork():
-    os.system(f'{rc}service {network} stop')
+    os.system(f'{RcType.rc}service {RcType.network_service} stop')
     sleep(1)
 
 
 def startallnetwork():
-    os.system(f'{rc}service {network} start')
+    os.system(f'{RcType.rc}service {RcType.network_service} start')
     sleep(1)
 
 
@@ -348,8 +362,7 @@ def enable_wifi(wificard):
 
 # work around of iwm on FreeBSD 12.0
 def start_wifi():
-    crd = Popen(ncard, shell=True, stdout=PIPE, universal_newlines=True)
-    for nic in crd.stdout.readlines()[0].rstrip().split():
+    for nic in network_device_list():
         print(nic)
         if 'wlan' in nic:
             os.system(f'wpa_supplicant -B -i {nic} -c /etc/wpa_supplicant.conf')
@@ -371,7 +384,7 @@ def connect_to_ssid(name, wificard):
     os.system(f'ifconfig {wificard} up')
     sleep(0.5)
     os.system(f'ifconfig {wificard} scan')
-    if openrc is False:
+    if not is_openrc():
         sleep(2)
         os.system(f'dhclient {wificard}')
     sleep(0.5)
