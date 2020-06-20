@@ -1,11 +1,10 @@
 import pytest
 from pathlib import Path
 import site
-from subprocess import Popen, PIPE
+from subprocess import PIPE
 
 site.addsitedir(str(Path(__file__).absolute().parent.parent.parent.joinpath('src')))
 import net_api
-from net_api import RcType
 
 
 class MockPopen(object):
@@ -21,7 +20,7 @@ class MockPopen(object):
 
 
 def test_rc_type_class_is_rc():
-    rc_type = RcType()
+    rc_type = net_api.RcType()
     assert rc_type.rc == 'rc-'
     assert rc_type.network_service == 'network'
     assert rc_type.is_openrc
@@ -29,15 +28,11 @@ def test_rc_type_class_is_rc():
 
 def test_rc_type_class_not_rc(monkeypatch):
     monkeypatch.setattr(net_api, "Popen", MockPopen)
-    rc_type = RcType()
+    rc_type = net_api.RcType()
 
     assert rc_type.rc == ''
     assert rc_type.network_service == 'netif'
     assert rc_type.is_openrc is False
-
-
-def test_network_device_list_is_list():
-    assert isinstance(net_api.network_device_list(), list)
 
 
 def test_network_device_list_no_loopback():
@@ -48,10 +43,47 @@ def test_openrc():
     assert net_api.openrc
 
 
-# TODO: create fake rc.conf file to simulate missing card
+def test_read_rc_conf():
+    result = net_api.read_rc_conf()
+    assert isinstance(result, str)
+
+
+def test_read_rc_conf_error():
+    with pytest.raises(SystemExit) as bad_rc_conf:
+        net_api.read_rc_conf('/etc/rc.con')
+    assert bad_rc_conf.type == SystemExit
+    assert bad_rc_conf.value.code == 1
+
+
+wifi_params = [('wlan0', 'c4:41:1e:40:68:d0', 'c4:41:1e:40:68:d0'), ('wlan99', 'c4:41:1e:40:68:d0', ''),
+               ('wlan0', 'c4:41:1e:40:68', 'c4:41:1e:40:68:d0'), ('wlan0', 'c4:41:1e:40:68:d1', '')]
+wifi_params_id = [f'Card: {item[0]}, BSSID: {item[1]}' for item in wifi_params]
+
+
+@pytest.mark.parametrize('wificard, bssid, expected', wifi_params, ids=wifi_params_id)
+def test_scan_wifi_bssid(wificard, bssid, expected):
+    result = net_api.scan_wifi_bssid(wificard=wificard, bssid=bssid)
+    assert isinstance(result, str)
+    assert expected in result
+
+
+def test_network_device_list_is_list():
+    assert isinstance(net_api.network_device_list(), list)
+
+
 def test_is_wifi_card_added():
     assert net_api.is_wifi_card_added()
 
-def test_read_rc_conf():
-    result = net_api.read_rc_conf()
-    print(f"\n====== {result} =====\n")
+
+def test_is_wifi_card_added_not_in_rc_conf(monkeypatch):
+    class MockSysctl(object):
+        def __init__(self, args):
+            self.args = args
+
+        @staticmethod
+        def value():
+            return ""
+
+    monkeypatch.setattr(net_api, 'Sysctl', MockSysctl)
+    assert not net_api.is_wifi_card_added()
+

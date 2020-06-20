@@ -89,14 +89,15 @@ class RcType:
 rc_type = RcType()
 
 
-def read_rc_conf(rc_file_path: str = None):
+def read_rc_conf(rc_file_path: str = None) -> str:
     if rc_file_path is None:
         rc_file_path = '/etc/rc.conf'
     try:
         with open(rc_file_path) as f_name:
-            data = f_name.readlines()
+            data = f_name.read()
     except FileNotFoundError as e:
         print(f"ERROR: {e}", file=sys.stderr)
+        sys.exit(1)
     return data
 
 
@@ -107,7 +108,6 @@ def openrc():
 def scan_wifi_bssid(bssid, wificard):
     grep_list_scanv = f"ifconfig -v {wificard} list scan | grep -a {bssid}"
     wifi = Popen(grep_list_scanv, shell=True, stdout=PIPE, universal_newlines=True)
-    # info = wifi.stdout.readlines()[0].rstrip()
     info, _ = wifi.communicate()
     return info
 
@@ -124,17 +124,14 @@ def is_wifi_card_added() -> bool:
     """
     wifi_cards = Sysctl("net.wlan.devices").value
 
-    with open('/etc/rc.conf', 'r') as rc_conf:
-        return f"wlans_{wifi_cards}" in rc_conf.read()
+    return f"wlans_{wifi_cards}" in read_rc_conf()
 
 
 def ifwiredcardadded():
-    cardlist = network_device_list()
     answer = False
-    if len(cardlist) != 0:
-        rc_conf = open('/etc/rc.conf', 'r').read()
-        for card in cardlist:
-            if 'ifconfig_%s=' % card not in rc_conf:
+    if bool(network_device_list()):
+        for card in network_device_list():
+            if f'ifconfig_{card}' not in read_rc_conf():
                 answer = True
                 break
     return answer
