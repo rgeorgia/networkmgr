@@ -51,3 +51,7 @@ def test_openrc():
 # TODO: create fake rc.conf file to simulate missing card
 def test_is_wifi_card_added():
     assert net_api.is_wifi_card_added()
+
+def test_read_rc_conf():
+    result = net_api.read_rc_conf()
+    print(f"\n====== {result} =====\n")

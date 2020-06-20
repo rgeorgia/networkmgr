@@ -28,6 +28,7 @@ ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 """
 import socket
+import sys
 from subprocess import Popen, PIPE
 from sys import path
 import os
@@ -89,6 +90,17 @@ class RcType:
 
 
 rc_type = RcType()
+
+
+def read_rc_conf(rc_file_path: str = None):
+    if rc_file_path is None:
+        rc_file_path = '/etc/rc.conf'
+    try:
+        with open(rc_file_path) as f_name:
+            data = f_name.readlines()
+    except FileNotFoundError as e:
+        print(f"ERROR: {e}", file=sys.stderr)
+    return data
 
 
 def openrc():
