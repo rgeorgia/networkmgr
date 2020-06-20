@@ -69,10 +69,7 @@ class RcType:
 
     @property
     def is_openrc(self):
-        if 'rc' in self.rc_system:
-            return True
-        else:
-            return False
+        return 'rc' in self.rc_system
 
     @property
     def rc(self):
@@ -128,10 +125,7 @@ def is_wifi_card_added() -> bool:
     wifi_cards = Sysctl("net.wlan.devices").value
 
     with open('/etc/rc.conf', 'r') as rc_conf:
-        if f"wlans_{wifi_cards}" in rc_conf.read():
-            return True
-        else:
-            return False
+        return f"wlans_{wifi_cards}" in rc_conf.read()
 
 
 def ifwiredcardadded():
@@ -147,19 +141,13 @@ def ifwiredcardadded():
 
 
 def isanewnetworkcardinstall():
-    if is_wifi_card_added() is True or ifwiredcardadded() is True:
-        return True
-    else:
-        return False
+    return is_wifi_card_added() is True or ifwiredcardadded() is True
 
 
 def ifcardisonline(netcard):
     lan = Popen('ifconfig ' + netcard, shell=True, stdout=PIPE,
                 universal_newlines=True)
-    if 'inet ' in lan.stdout.read():
-        return True
-    else:
-        return False
+    return 'inet ' in lan.stdout.read()
 
 
 def defaultcard():
@@ -175,20 +163,14 @@ def defaultcard():
 def if_wlan_disable(wificard):
     cmd = "ifconfig %s list scan" % wificard
     nics = Popen(cmd, shell=True, stdout=PIPE, universal_newlines=True)
-    if "" == nics.stdout.read():
-        return True
-    else:
-        return False
+    return "" == nics.stdout.read()
 
 
 def if_statue(wificard):
     cmd = "ifconfig %s" % wificard
     wl = Popen(cmd, shell=True, stdout=PIPE, universal_newlines=True)
     wlout = wl.stdout.read()
-    if "associated" in wlout:
-        return True
-    else:
-        return False
+    return "associated" in wlout
 
 
 def get_ssid(wificard):
@@ -198,11 +180,7 @@ def get_ssid(wificard):
     # otherwise use the default whitespace. This is to handle ssid strings
     # with spaces in them. These ssid strings will be double quoted by ifconfig
     temp = wlan.stdout.readlines()[0].rstrip()
-    if '"' in temp:
-        out = temp.split('"')[1]
-    else:
-        out = temp.split()[1]
-    return out
+    return temp.split('"')[1] if '"' in temp else temp.split()[1]
 
 
 def get_bssid(wificard):
@@ -214,10 +192,7 @@ def get_bssid(wificard):
 def ifcardconnected(netcard):
     wifi = Popen('ifconfig ' + netcard, shell=True, stdout=PIPE,
                  universal_newlines=True)
-    if 'status: active' in wifi.stdout.read():
-        return True
-    else:
-        return False
+    return 'status: active' in wifi.stdout.read()
 
 
 def barpercent(sn):
@@ -234,10 +209,7 @@ def network_service_state():
             stdout=PIPE,
             universal_newlines=True
         )
-        if 'status: started' in status.stdout.read():
-            return True
-        else:
-            return False
+        return 'status: started' in status.stdout.read()
     else:
         return False
 
@@ -403,5 +375,6 @@ def subnet_hex_to_dec(ifconfigstring):
     snethexlist = re.findall('..', snethex)
     snetdeclist = [int(li, 16) for li in snethexlist]
     snetdec = ".".join(str(li) for li in snetdeclist)
-    outputline = ifconfigstring.replace(re.search('0x.{8}', ifconfigstring).group(0), snetdec)
-    return outputline
+    return ifconfigstring.replace(
+        re.search('0x.{8}', ifconfigstring).group(0), snetdec
+    )
