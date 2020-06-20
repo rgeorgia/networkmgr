@@ -4,7 +4,8 @@ import site
 from subprocess import Popen, PIPE
 
 site.addsitedir(str(Path(__file__).absolute().parent.parent.parent.joinpath('src')))
-import net_api as net_api
+import net_api
+from net_api import RcType
 
 
 class MockPopen(object):
@@ -19,22 +20,34 @@ class MockPopen(object):
         return "", None
 
 
-def test_is_openrc():
-    assert net_api.is_openrc()
-
-
-def test_not_openrc(monkeypatch):
-    monkeypatch.setattr(net_api.RcType, "Popen", MockPopen)
-    result = net_api.is_openrc()
-    assert result is False
-
-
 def test_rc_type_class_is_rc():
-    assert net_api.RcType().rc == 'rc-'
-    assert net_api.RcType().network_service == 'network'
+    rc_type = RcType()
+    assert rc_type.rc == 'rc-'
+    assert rc_type.network_service == 'network'
+    assert rc_type.is_openrc
 
 
 def test_rc_type_class_not_rc(monkeypatch):
     monkeypatch.setattr(net_api, "Popen", MockPopen)
-    assert net_api.RcType().rc == ''
-    assert net_api.RcType().network_service == 'netif'
+    rc_type = RcType()
+
+    assert rc_type.rc == ''
+    assert rc_type.network_service == 'netif'
+    assert rc_type.is_openrc is False
+
+
+def test_network_device_list_is_list():
+    assert isinstance(net_api.network_device_list(), list)
+
+
+def test_network_device_list_no_loopback():
+    assert 'lo' not in net_api.network_device_list()
+
+
+def test_openrc():
+    assert net_api.openrc
+
+
+# TODO: create fake rc.conf file to simulate missing card
+def test_is_wifi_card_added():
+    assert net_api.is_wifi_card_added()

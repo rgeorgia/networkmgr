@@ -28,7 +28,6 @@ ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 """
 import socket
-from dataclasses import dataclass
 from subprocess import Popen, PIPE
 from sys import path
 import os
@@ -59,7 +58,7 @@ not_valid_if = {
 
 class RcType:
     def __init__(self):
-        self.rc = ''
+        self._rc = ''
         self.chk_rc_cmd = "kenv | grep rc_system"
         self._rc_system, _ = Popen(self.chk_rc_cmd, shell=True, stdout=PIPE, universal_newlines=True).communicate()
 
@@ -74,12 +73,14 @@ class RcType:
         else:
             return False
 
+    @property
     def rc(self):
         if 'rc' in self.rc_system:
             return 'rc-'
         else:
             return ''
 
+    @property
     def network_service(self) -> str:
         if 'rc' in self.rc_system:
             return 'network'
@@ -90,20 +91,15 @@ class RcType:
 rc_type = RcType()
 
 
-def is_openrc() -> bool:
-    """is_openrc
-    Returns True if this system uses openrc and False is rc.d.
-    NOTE: this will work only for BSD systems. This assumes GhostBSD
-    :return: bool
-    """
-
+def openrc():
     return rc_type.is_openrc
 
 
 def scan_wifi_bssid(bssid, wificard):
-    grep_list_scanv = "ifconfig -v %s list scan | grep -a %s" % (wificard, bssid)
+    grep_list_scanv = f"ifconfig -v {wificard} list scan | grep -a {bssid}"
     wifi = Popen(grep_list_scanv, shell=True, stdout=PIPE, universal_newlines=True)
-    info = wifi.stdout.readlines()[0].rstrip()
+    # info = wifi.stdout.readlines()[0].rstrip()
+    info, _ = wifi.communicate()
     return info
 
 
@@ -219,7 +215,7 @@ def barpercent(sn):
 
 
 def network_service_state():
-    if is_openrc() is True:
+    if openrc() is True:
         status = Popen(
             f'{RcType.rc}service {RcType.network_service} status',
             shell=True,
@@ -384,7 +380,7 @@ def connect_to_ssid(name, wificard):
     os.system(f'ifconfig {wificard} up')
     sleep(0.5)
     os.system(f'ifconfig {wificard} scan')
-    if not is_openrc():
+    if not openrc():
         sleep(2)
         os.system(f'dhclient {wificard}')
     sleep(0.5)
