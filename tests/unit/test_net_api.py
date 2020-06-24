@@ -87,3 +87,5 @@ def test_is_wifi_card_added_not_in_rc_conf(monkeypatch):
     monkeypatch.setattr(net_api, 'Sysctl', MockSysctl)
     assert not net_api.is_wifi_card_added()
 
+def test_isanewnetworkcardinstall():
+    assert net_api.isanewnetworkcardinstall()
