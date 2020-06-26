@@ -6,11 +6,11 @@ from time import sleep
 import threading
 import locale
 import os
-from .net_api import stopnetworkcard, isanewnetworkcardinstall
+from .net_api import stopnetworkcard, is_a_new_network_card_install
 from .net_api import startnetworkcard, wifi_disconnection
-from .net_api import stopallnetwork, startallnetwork, connect_to_ssid
+from .net_api import stop_all_network, start_all_network, connect_to_ssid
 from .net_api import disable_wifi, enable_wifi
-from .net_api import connection_status, networkdictionary, openrc
+from .net_api import connection_status, network_dictionary, openrc
 from .authentication import Authentication, OpenWpaSupplicant
 
 gi.require_version('Gtk', '3.0')
@@ -25,7 +25,7 @@ class TrayIcon(object):
 
     def __init__(self):
         self.menu = Gtk.Menu()
-        self.cardinfo = networkdictionary()
+        self.cardinfo = network_dictionary()
         self.thr = threading.Thread(target=self.updatetrayloop)
         self.ifruning = False
         self.statusIcon = Gtk.StatusIcon()
@@ -218,12 +218,12 @@ class TrayIcon(object):
         self.ifruning = False
 
     def close_network(self, ):
-        stopallnetwork()
+        stop_all_network()
         self.updateinfo()
         self.ifruning = False
 
     def open_network(self, ):
-        startallnetwork()
+        start_all_network()
         self.updateinfo()
         self.ifruning = False
 
@@ -298,7 +298,7 @@ class TrayIcon(object):
     @staticmethod
     def checkfornewcard():
         if os.path.exists("/usr/local/bin/netcardmgr"):
-            if isanewnetworkcardinstall() is True:
+            if is_a_new_network_card_install() is True:
                 os.system("netcardmgr")
 
     def updatetrayicon(self, defaultdev, card_type):

@@ -127,7 +127,7 @@ def is_wifi_card_added() -> bool:
     return f"wlans_{wifi_cards}" in read_rc_conf()
 
 
-def ifwiredcardadded():
+def if_wired_card_added():
     answer = False
     if bool(network_device_list()):
         for card in network_device_list():
@@ -137,17 +137,17 @@ def ifwiredcardadded():
     return answer
 
 
-def isanewnetworkcardinstall():
-    return is_wifi_card_added() is True or ifwiredcardadded() is True
+def is_a_new_network_card_install():
+    return is_wifi_card_added() is True or if_wired_card_added() is True
 
 
-def ifcardisonline(netcard):
+def if_card_is_online(netcard):
     lan = Popen('ifconfig ' + netcard, shell=True, stdout=PIPE,
                 universal_newlines=True)
-    return 'inet ' in lan.stdout.read()
+    return 'inet ' in lan.communicate()
 
 
-def defaultcard():
+def default_card():
     cmd = "netstat -rn | grep default"
     nics = Popen(cmd, shell=True, stdout=PIPE, universal_newlines=True)
     device = nics.stdout.readlines()
@@ -211,11 +211,11 @@ def network_service_state():
         return False
 
 
-def networkdictionary():
+def network_dictionary():
     nlist = network_device_list()
     maindictionary = {
         'service': network_service_state(),
-        'default': defaultcard()
+        'default': default_card()
     }
     cards = {}
     for card in nlist:
@@ -262,7 +262,7 @@ def networkdictionary():
                 'info': connectioninfo
             }
         else:
-            if ifcardisonline(card) is True:
+            if if_card_is_online(card) is True:
                 connectionstat = {"connection": "Connected"}
             elif ifcardconnected(card) is True:
                 connectionstat = {"connection": "Disconnected"}
@@ -299,12 +299,12 @@ def connection_status(card):
     return netstate
 
 
-def stopallnetwork():
+def stop_all_network():
     os.system(f'{RcType.rc}service {RcType.network_service} stop')
     sleep(1)
 
 
-def startallnetwork():
+def start_all_network():
     os.system(f'{RcType.rc}service {RcType.network_service} start')
     sleep(1)
 
