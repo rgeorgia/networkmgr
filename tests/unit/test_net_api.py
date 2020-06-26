@@ -75,6 +75,19 @@ def test_is_wifi_card_added():
     assert net_api.is_wifi_card_added()
 
 
+def test_is_wifi_card_added_not_in_list(monkeypatch):
+    class MockSocket(object):
+        def __init__(self, args):
+            self.args = args
+
+        @staticmethod
+        def if_nameindex():
+            return [(1, 'em3'), (2, 'em5'), (3, 'lo0'), (4, 'wlan2'), ]
+
+    monkeypatch.setattr(net_api, "socket", MockSocket)
+    assert net_api.is_wifi_card_added()
+
+
 def test_is_wifi_card_added_not_in_rc_conf(monkeypatch):
     class MockSysctl(object):
         def __init__(self, args):
@@ -88,21 +101,21 @@ def test_is_wifi_card_added_not_in_rc_conf(monkeypatch):
     assert not net_api.is_wifi_card_added()
 
 
-def test_if_wired_card_added_patched(monkeypatch):
-    class MockSocket(object):
-        def __init__(self, args):
-            self.args = args
-
-        @staticmethod
-        def if_nameindex():
-            return [(1, 'em3'), (2, 'em5'), (3, 'lo0'), (4, 'wlan2'), ]
-
-    monkeypatch.setattr(net_api, "socket", MockSocket)
-    assert net_api.if_wired_card_added()
-
-
-def test_if_wired_card_added():
-    assert not net_api.if_wired_card_added()
+# def test_if_wired_card_added_patched(monkeypatch):
+#     class MockSocket(object):
+#         def __init__(self, args):
+#             self.args = args
+#
+#         @staticmethod
+#         def if_nameindex():
+#             return [(1, 'em3'), (2, 'em5'), (3, 'lo0'), (4, 'wlan2'), ]
+#
+#     monkeypatch.setattr(net_api, "socket", MockSocket)
+#     assert net_api.if_wired_card_added()
+#
+#
+# def test_if_wired_card_added():
+#     assert not net_api.if_wired_card_added()
 
 
 def test_is_a_new_network_card_install():
