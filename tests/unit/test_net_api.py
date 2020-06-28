@@ -7,16 +7,12 @@ site.addsitedir(str(Path(__file__).absolute().parent.parent.parent.joinpath('src
 import net_api
 
 
+@pytest.mark.skipif('freebsd' not in sys.platform, reason="Must be freebsd")
 def test_rc_type_class_is_rc():
     rc_type = net_api.RcType()
-    if 'freebsd' in sys.platform:
-        assert rc_type.rc == 'rc-'
-        assert rc_type.network_service == 'network'
-        assert rc_type.is_openrc
-    else:
-        assert rc_type.rc == ''
-        assert rc_type.network_service == 'netif'
-        assert rc_type.is_openrc is False
+    assert rc_type.rc == 'rc-'
+    assert rc_type.network_service == 'network'
+    assert rc_type.is_openrc
 
 
 def test_rc_type_class_not_rc(monkeypatch, mock_popen):
