@@ -142,19 +142,19 @@ def is_a_new_network_card_install():
 
 
 def if_card_is_online(netcard):
-    lan = Popen('ifconfig ' + netcard, shell=True, stdout=PIPE,
+    lan = Popen(f'ifconfig {netcard}', shell=True, stdout=PIPE,
                 universal_newlines=True)
-    return 'inet ' in lan.communicate()
+    return 'inet ' in lan.communicate()[0]
 
 
 def default_card():
     cmd = "netstat -rn | grep default"
     nics = Popen(cmd, shell=True, stdout=PIPE, universal_newlines=True)
-    device = nics.stdout.readlines()
+    device, _ = nics.communicate()
     if len(device) == 0:
         return None
     else:
-        return list(filter(None, device[0].rstrip().split()))[3]
+        return device.split()[3]
 
 
 def if_wlan_disable(wificard):
