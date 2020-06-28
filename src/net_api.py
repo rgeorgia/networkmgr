@@ -154,7 +154,7 @@ def default_card():
     if len(device) == 0:
         return None
     else:
-        return device.split()[3]
+        return device[0].split()[3]
 
 
 def if_wlan_disable(wificard):

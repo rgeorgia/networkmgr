@@ -1,6 +1,7 @@
 import pytest
 from pathlib import Path
 import site
+import sys
 
 site.addsitedir(str(Path(__file__).absolute().parent.parent.parent.joinpath('src')))
 import net_api
@@ -8,9 +9,14 @@ import net_api
 
 def test_rc_type_class_is_rc():
     rc_type = net_api.RcType()
-    assert rc_type.rc == 'rc-'
-    assert rc_type.network_service == 'network'
-    assert rc_type.is_openrc
+    if 'freebsd' in sys.platform:
+        assert rc_type.rc == 'rc-'
+        assert rc_type.network_service == 'network'
+        assert rc_type.is_openrc
+    else:
+        assert rc_type.rc == ''
+        assert rc_type.network_service == 'netif'
+        assert rc_type.is_openrc is False
 
 
 def test_rc_type_class_not_rc(monkeypatch, mock_popen):
@@ -105,10 +111,9 @@ def test_if_card_is_online_not_online(monkeypatch, mock_popen):
 
 
 def test_default_card(monkeypatch, mock_popen):
-    monkeypatch.setattr(net_api, "Popen", mock_popen(['default            192.168.1.1        UGS         em0']))
+    monkeypatch.setattr(net_api, "Popen", mock_popen(['default            192.168.1.1        UGS         em11']))
     result = net_api.default_card()
-    print(f"\n======= {result} =======\n")
-    assert False
+    assert 'em11' in result
 
 
 def test_default_card_is_str():
