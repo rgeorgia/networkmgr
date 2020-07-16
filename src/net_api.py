@@ -154,29 +154,31 @@ def default_card():
     if len(device) == 0:
         return None
     else:
-        return device[0].split()[3]
+        return device[0]
 
 
 def if_wlan_disable(wificard):
-    cmd = "ifconfig %s list scan" % wificard
+    cmd = f"ifconfig {wificard} list scan"
     nics = Popen(cmd, shell=True, stdout=PIPE, universal_newlines=True)
-    return "" == nics.stdout.read()
+    scan_result, _ = nics.communicate()
+    return "" == scan_result
 
 
 def if_statue(wificard):
-    cmd = "ifconfig %s" % wificard
+    cmd = f"ifconfig {wificard}"
     wl = Popen(cmd, shell=True, stdout=PIPE, universal_newlines=True)
-    wlout = wl.stdout.read()
+    wlout, _ = wl.communicate()
     return "associated" in wlout
 
 
 def get_ssid(wificard):
-    wlan = Popen('ifconfig %s | grep ssid' % wificard,
+    wlan = Popen(f'ifconfig {wificard} | grep ssid',
                  shell=True, stdout=PIPE, universal_newlines=True)
     # If there are quotation marks in the string, use that as a separator,
     # otherwise use the default whitespace. This is to handle ssid strings
     # with spaces in them. These ssid strings will be double quoted by ifconfig
-    temp = wlan.stdout.readlines()[0].rstrip()
+    # temp = wlan.stdout.readlines()[0].rstrip()
+    temp, _ = wlan.communicate()
     return temp.split('"')[1] if '"' in temp else temp.split()[1]
 
 
@@ -186,13 +188,13 @@ def get_bssid(wificard):
     return wlan.stdout.readlines()[0].rstrip().split()[-1]
 
 
-def ifcardconnected(netcard):
+def if_card_connected(netcard):
     wifi = Popen('ifconfig ' + netcard, shell=True, stdout=PIPE,
                  universal_newlines=True)
     return 'status: active' in wifi.stdout.read()
 
 
-def barpercent(sn):
+def bar_percent(sn):
     sig = int(sn.partition(':')[0])
     noise = int(sn.partition(':')[2])
     return int((sig - noise) * 4)
@@ -235,7 +237,7 @@ def network_dictionary():
                 info = list(filter(None, info))
                 sn = info[3]
                 bssid = info[0]
-                info[3] = barpercent(sn)
+                info[3] = bar_percent(sn)
                 info.insert(0, ssid)
                 connectioninfo[bssid] = info
             if if_wlan_disable(card) is True:
@@ -264,7 +266,7 @@ def network_dictionary():
         else:
             if if_card_is_online(card) is True:
                 connectionstat = {"connection": "Connected"}
-            elif ifcardconnected(card) is True:
+            elif if_card_connected(card) is True:
                 connectionstat = {"connection": "Disconnected"}
             else:
                 connectionstat = {"connection": "Unplug"}

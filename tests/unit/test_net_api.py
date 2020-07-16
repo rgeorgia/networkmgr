@@ -107,10 +107,24 @@ def test_if_card_is_online_not_online(monkeypatch, mock_popen):
 
 
 def test_default_card(monkeypatch, mock_popen):
-    monkeypatch.setattr(net_api, "Popen", mock_popen(['default            192.168.1.1        UGS         em11']))
+    monkeypatch.setattr(net_api, "Popen", mock_popen(['default            192.168.1.1        UGS         em11\n']))
     result = net_api.default_card()
     assert 'em11' in result
 
 
 def test_default_card_is_str():
     assert isinstance(net_api.default_card(), str)
+
+#TODO: need to mock test for both true and false
+def test_if_wlan_disable():
+    assert net_api.if_wlan_disable('wlan1')
+
+def test_if_statue():
+    assert net_api.if_statue('wlan0')
+
+def test_not_if_statue():
+    assert not net_api.if_statue('wlan10')
+
+def test_get_ssid():
+    print(f"\n====> {net_api.get_ssid('wlan0')} <====\n")
+    assert not net_api.get_ssid('wlan0')
