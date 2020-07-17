@@ -46,9 +46,9 @@ def test_read_rc_conf_error():
 
 wifi_params = [('wlan0', 'c4:41:1e:40:68:d0', 'c4:41:1e:40:68:d0'), ('wlan99', 'c4:41:1e:40:68:d0', ''),
                ('wlan0', 'c4:41:1e:40:68', 'c4:41:1e:40:68:d0'), ('wlan0', 'c4:41:1e:40:68:d1', '')]
-wifi_params_id = [f'Card: {item[0]}, BSSID: {item[1]}' for item in wifi_params]
+wifi_params_id = [f'Card: {item[0]} BSSID: {item[1]}' for item in wifi_params]
 
-
+@pytest.mark.skipif('wlan' not in net_api.network_device_list(), reason="No network card detected")
 @pytest.mark.parametrize('wificard, bssid, expected', wifi_params, ids=wifi_params_id)
 def test_scan_wifi_bssid(wificard, bssid, expected):
     result = net_api.scan_wifi_bssid(wificard=wificard, bssid=bssid)
@@ -60,6 +60,7 @@ def test_network_device_list_is_list():
     assert isinstance(net_api.network_device_list(), list)
 
 
+@pytest.mark.skipif('wlan' not in net_api.network_device_list(), reason="No network card detected")
 def test_is_wifi_card_added():
     assert net_api.is_wifi_card_added()
 

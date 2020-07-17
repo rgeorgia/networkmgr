@@ -10,7 +10,6 @@ mccabe
 more-itertools
 packaging
 pluggy
-py
 pycodestyle
 pyflakes
 pyparsing
@@ -25,8 +24,6 @@ pytest-subprocess
 pytest-xdist
 rope
 six
-sqlite3
 termcolor
-uhid-freebsd
 wcwidth
 zipp
